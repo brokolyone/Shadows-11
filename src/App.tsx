@@ -179,7 +179,9 @@ const Paint = () => {
   );
 };
 
-const FileExplorer = ({ fs, currentPath, onNavigate, onOpenFile, t }: { fs: FSItem, currentPath: string, onNavigate: (path: string) => void, onOpenFile: (item: FSItem) => void, t: any }) => {
+const FileExplorer = ({ fs, currentPath, onNavigate, onOpenFile, onSetWallpaper, t }: { fs: FSItem, currentPath: string, onNavigate: (path: string) => void, onOpenFile: (item: FSItem) => void, onSetWallpaper: (url: string) => void, t: any }) => {
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, item: FSItem } | null>(null);
+
   const getItemsAtCurrentPath = () => {
     if (currentPath === '/') return fs.children || [];
     const parts = currentPath.split('/').filter(Boolean);
@@ -193,8 +195,21 @@ const FileExplorer = ({ fs, currentPath, onNavigate, onOpenFile, t }: { fs: FSIt
 
   const items = getItemsAtCurrentPath();
 
+  const handleContextMenu = (e: React.MouseEvent, item: FSItem) => {
+    e.preventDefault();
+    if (item.type === 'file') {
+      setContextMenu({ x: e.clientX, y: e.clientY, item });
+    }
+  };
+
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, []);
+
   return (
-    <div className="p-4 h-full flex flex-col gap-4 text-sm dark:text-gray-200">
+    <div className="p-4 h-full flex flex-col gap-4 text-sm dark:text-gray-200 relative">
       <div className="flex items-center gap-2 text-xs bg-black/5 dark:bg-white/5 p-2 rounded">
         <button onClick={() => onNavigate('/')} className="hover:underline opacity-50">{t.thisPC}</button>
         <span className="opacity-50">&gt;</span>
@@ -218,6 +233,7 @@ const FileExplorer = ({ fs, currentPath, onNavigate, onOpenFile, t }: { fs: FSIt
           <div 
             key={item.id} 
             onDoubleClick={() => item.type === 'directory' ? onNavigate(`${currentPath === '/' ? '' : currentPath}/${item.name}`) : onOpenFile(item)}
+            onContextMenu={(e) => handleContextMenu(e, item)}
             className="flex flex-col items-center gap-1 p-2 hover:bg-white/10 rounded cursor-pointer group text-center"
           >
             {item.type === 'directory' ? (
@@ -229,6 +245,27 @@ const FileExplorer = ({ fs, currentPath, onNavigate, onOpenFile, t }: { fs: FSIt
           </div>
         ))}
       </div>
+
+      {contextMenu && (
+        <div 
+          className="fixed bg-white dark:bg-[#2c2c2c] border border-black/10 dark:border-white/10 shadow-xl rounded py-1 z-[100000] min-w-[150px]"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+        >
+          <button 
+            onClick={() => {
+              const url = contextMenu.item.content || '';
+              if (url.startsWith('http') || url.startsWith('glass') || url.startsWith('sunset') || url.startsWith('midnight') || url.startsWith('local')) {
+                onSetWallpaper(url);
+              } else {
+                alert('This file is not a valid image.');
+              }
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-blue-600 hover:text-white text-xs"
+          >
+            Set as Wallpaper
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -751,10 +788,14 @@ const Settings = ({
   t: any 
 }) => {
   const wallpapers = [
-    { id: 'default', url: 'https://picsum.photos/seed/windows11/1920/1080?blur=2' },
-    { id: 'mt1', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=400&q=80', full: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920&q=80' },
-    { id: 'mt2', url: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=400&q=80', full: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=1920&q=80' },
-    { id: 'mt3', url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80', full: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1920&q=80' },
+    { id: 'default', url: 'glass-gradient', name: 'Shadows Default' },
+    { id: 'sunset', url: 'sunset-glow', name: 'Sunset Glow' },
+    { id: 'aurora', url: 'midnight-aurora', name: 'Midnight Aurora' },
+    { id: 'mountains', url: 'local-mountains', name: 'Mountain Peak' },
+    { id: 'desert', url: 'local-desert', name: 'Desert Dunes' },
+    { id: 'ls1', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=400&q=80', full: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920&q=80', name: 'Alpine Lake' },
+    { id: 'ls2', url: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=400&q=80', full: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=1920&q=80', name: 'Green Valley' },
+    { id: 'ls3', url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80', full: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1920&q=80', name: 'Canyon River' },
   ];
 
   return (
@@ -808,45 +849,45 @@ const Settings = ({
             <div>
               <p className="text-xs mb-2 opacity-70">{t.wallpaper}</p>
               <div className="flex flex-col gap-4">
-                {/* Default Wallpaper Frame */}
                 <div className="flex flex-col gap-2">
-                  <span className="text-[10px] opacity-50 uppercase tracking-wider">System Default</span>
-                  <div 
-                    onClick={() => setWallpaper(wallpapers[0].url)}
-                    className={`relative w-40 aspect-video rounded-lg border-2 cursor-pointer overflow-hidden transition-all bg-blue-900/20 ${wallpaper === wallpapers[0].url ? 'border-blue-500 scale-95' : 'border-white/10 hover:border-white/30'}`}
-                  >
-                    <img 
-                      src={wallpapers[0].url} 
-                      alt="Default" 
-                      className="w-full h-full object-cover brightness-50" 
-                      referrerPolicy="no-referrer"
-                      onError={(e) => (e.currentTarget.style.display = 'none')} 
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-600/20 to-purple-600/20">
-                      <span className="text-white font-bold text-sm tracking-widest uppercase drop-shadow-lg">Default</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Other Wallpapers Grid */}
-                <div className="flex flex-col gap-2">
-                  <span className="text-[10px] opacity-50 uppercase tracking-wider">Landscape Collection</span>
-                  <div className="grid grid-cols-4 gap-2">
-                    {wallpapers.slice(1).map(wp => (
+                  <span className="text-[10px] opacity-50 uppercase tracking-wider">Built-in Collection</span>
+                  <div className="grid grid-cols-2 gap-3">
+                    {wallpapers.map(wp => (
                       <div 
                         key={wp.id}
                         onClick={() => setWallpaper(wp.full || wp.url)}
-                        className={`aspect-video rounded border-2 cursor-pointer overflow-hidden transition-all bg-white/5 flex items-center justify-center ${wallpaper === (wp.full || wp.url) ? 'border-blue-500 scale-95' : 'border-transparent hover:border-white/20'}`}
+                        className={`relative aspect-video rounded-lg border-2 cursor-pointer overflow-hidden transition-all ${wallpaper === (wp.full || wp.url) ? 'border-blue-500 scale-95' : 'border-white/10 hover:border-white/30'}`}
                       >
-                        <img 
-                          src={wp.url} 
-                          alt={wp.id} 
-                          className="w-full h-full object-cover" 
-                          referrerPolicy="no-referrer"
-                          onError={(e) => (e.currentTarget.style.opacity = '0')}
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
-                          <Palette size={16} />
+                        {/* Preview Thumbnail using CSS or Image */}
+                        {wp.url.startsWith('http') ? (
+                          <img 
+                            src={wp.url} 
+                            alt={wp.name} 
+                            className="w-full h-full object-cover" 
+                            referrerPolicy="no-referrer"
+                            onError={(e) => (e.currentTarget.style.opacity = '0')}
+                          />
+                        ) : (
+                          <div className={`absolute inset-0 ${
+                            wp.id === 'default' ? 'bg-gradient-to-br from-indigo-900 via-blue-800 to-purple-900' :
+                            wp.id === 'sunset' ? 'bg-gradient-to-br from-orange-600 via-rose-600 to-indigo-900' :
+                            wp.id === 'aurora' ? 'bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-950' :
+                            wp.id === 'mountains' ? 'bg-slate-900' :
+                            'bg-orange-900'
+                          }`} />
+                        )}
+                        {wp.id === 'mountains' && (
+                          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                            <path d="M0 100 L30 40 L60 80 L80 20 L100 100 Z" fill="rgba(255,255,255,0.1)" />
+                          </svg>
+                        )}
+                        {wp.id === 'desert' && (
+                          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                            <path d="M0 80 Q25 60 50 80 T100 80 L100 100 L0 100 Z" fill="rgba(255,255,255,0.1)" />
+                          </svg>
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                          <span className="text-white font-bold text-[10px] tracking-widest uppercase text-center px-2">{wp.name}</span>
                         </div>
                       </div>
                     ))}
@@ -902,7 +943,6 @@ const APPS: AppConfig[] = [
   { id: 'paint', name: 'Paint', icon: Palette, color: '#ef4444', component: Paint },
   { id: 'settings', name: 'Settings', icon: SettingsIcon, color: '#64748b', component: Settings },
   { id: 'terminal', name: 'Terminal', icon: TermIcon, color: '#000000', component: Terminal },
-  { id: 'taskmanager', name: 'Task Manager', icon: Activity, color: '#22c55e', component: TaskManager },
   { id: 'store', name: 'Microsoft Store', icon: ShoppingBag, color: '#3b82f6', component: () => <div className="flex items-center justify-center h-full text-gray-400">Store is currently offline</div> },
 ];
 
@@ -927,7 +967,7 @@ const AppWindow = ({ win, activeWindowId, onClose, onMaximize, onMinimize, onFoc
   const renderContent = () => {
     switch (win.appId) {
       case 'explorer':
-        return <FileExplorer fs={fs} currentPath={currentPath} onNavigate={setCurrentPath} onOpenFile={(file) => onOpenAppWithFile('notepad', file)} t={t} />;
+        return <FileExplorer fs={fs} currentPath={currentPath} onNavigate={setCurrentPath} onOpenFile={(file) => onOpenAppWithFile('notepad', file)} onSetWallpaper={setWallpaper} t={t} />;
       case 'notepad':
         return <Notepad 
           fs={fs} 
@@ -1045,7 +1085,7 @@ export default function App() {
   const [weather, setWeather] = useState<{ temp: number, desc: string }>({ temp: 21, desc: 'Sunny' });
   const [language, setLanguage] = useState<Language>('en');
   const [theme, setTheme] = useState<Theme>('dark');
-  const [wallpaper, setWallpaper] = useState('https://picsum.photos/seed/windows11/1920/1080?blur=2');
+  const [wallpaper, setWallpaper] = useState('glass-gradient');
   const [taskbarAlignment, setTaskbarAlignment] = useState<TaskbarAlignment>('center');
   const [transparency, setTransparency] = useState(true);
   const [selectedIconIds, setSelectedIconIds] = useState<string[]>([]);
@@ -1198,8 +1238,10 @@ export default function App() {
 
   const handleDownload = (name: string) => {
     const isAudio = name.toLowerCase().endsWith('.mp3') || name.toLowerCase().endsWith('.wav');
-    if (!isAudio) {
-      alert('Only .mp3 and .wav files are supported for isolated download in this system.');
+    const isImage = name.toLowerCase().endsWith('.jpg') || name.toLowerCase().endsWith('.png') || name.toLowerCase().endsWith('.webp');
+    
+    if (!isAudio && !isImage) {
+      alert('Only audio (.mp3, .wav) and image (.jpg, .png, .webp) files are supported for isolated download.');
       return;
     }
 
@@ -1210,11 +1252,11 @@ export default function App() {
         id: Math.random().toString(36).substr(2, 9),
         name,
         type: 'file',
-        content: `Simulated audio content for ${name}`
+        content: isImage ? `https://picsum.photos/seed/${name}/1920/1080` : `Simulated audio content for ${name}`
       };
       downloadsFolder.children = [...(downloadsFolder.children || []), newItem];
       setFS(newFS);
-      alert(`${name} has been downloaded to your Downloads folder.`);
+      alert(`${name} has been downloaded to your Downloads folder. You can now set it as wallpaper from File Explorer.`);
       openApp('explorer');
     }
   };
@@ -1224,10 +1266,65 @@ export default function App() {
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
-      className={`relative w-screen h-screen overflow-hidden bg-cover bg-center transition-all duration-1000 ${theme === 'dark' ? 'dark text-white' : 'bg-white text-black'}`} 
-      style={{ backgroundImage: `url(${wallpaper})` }}
+      className={`relative w-screen h-screen overflow-hidden transition-all duration-1000 ${theme === 'dark' ? 'dark text-white' : 'bg-white text-black'}`} 
+      style={{ 
+        backgroundImage: 
+          wallpaper === 'glass-gradient' ? 'radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%)' :
+          wallpaper === 'sunset-glow' ? 'linear-gradient(135deg, #4c1d95 0%, #be123c 50%, #fb923c 100%)' :
+          wallpaper === 'midnight-aurora' ? 'radial-gradient(circle at 20% 30%, #064e3b 0%, #020617 100%)' :
+          wallpaper === 'local-mountains' ? 'none' :
+          wallpaper === 'local-desert' ? 'none' :
+          `url(${wallpaper})`,
+        backgroundColor:
+          wallpaper === 'local-mountains' ? '#0f172a' :
+          wallpaper === 'local-desert' ? '#451a03' :
+          'transparent',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}
     >
-      
+      {/* Procedural Effects for built-in wallpapers */}
+      {wallpaper === 'glass-gradient' && (
+        <div className="absolute inset-0 opacity-40 pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600 rounded-full blur-[120px]" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600 rounded-full blur-[120px]" />
+        </div>
+      )}
+      {wallpaper === 'sunset-glow' && (
+        <div className="absolute inset-0 opacity-30 pointer-events-none">
+          <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-orange-400 rounded-full blur-[100px]" />
+        </div>
+      )}
+      {wallpaper === 'midnight-aurora' && (
+        <div className="absolute inset-0 opacity-50 pointer-events-none overflow-hidden">
+          <motion.div 
+            animate={{ x: [0, 50, 0], opacity: [0.3, 0.6, 0.3] }}
+            transition={{ duration: 10, repeat: Infinity }}
+            className="absolute top-0 left-0 w-full h-[40%] bg-emerald-500/20 blur-[80px] skew-y-12" 
+          />
+        </div>
+      )}
+      {wallpaper === 'local-mountains' && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950 to-slate-900" />
+          <svg className="absolute bottom-0 w-full h-[60%] opacity-40" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+            <path d="M0 1000 L300 400 L500 800 L800 200 L1000 1000 Z" fill="#1e293b" />
+            <path d="M0 1000 L200 600 L400 900 L700 500 L1000 1000 Z" fill="#0f172a" opacity="0.8" />
+          </svg>
+          <div className="absolute top-20 left-20 w-1 h-1 bg-white rounded-full shadow-[0_0_10px_white] animate-pulse" />
+          <div className="absolute top-40 right-40 w-1 h-1 bg-white rounded-full opacity-50" />
+        </div>
+      )}
+      {wallpaper === 'local-desert' && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-orange-900 to-amber-950" />
+          <svg className="absolute bottom-0 w-full h-[50%]" viewBox="0 0 1000 500" preserveAspectRatio="none">
+            <path d="M0 500 Q250 200 500 400 T1000 300 L1000 500 L0 500 Z" fill="#78350f" />
+            <path d="M0 500 Q300 350 600 450 T1000 400 L1000 500 L0 500 Z" fill="#451a03" opacity="0.7" />
+          </svg>
+          <div className="absolute top-20 right-20 w-32 h-32 bg-orange-500 rounded-full blur-[60px] opacity-20" />
+        </div>
+      )}
       {/* Selection Area */}
       {selection && selection.end && (
         <div 
