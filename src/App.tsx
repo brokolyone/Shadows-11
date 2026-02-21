@@ -813,10 +813,16 @@ const Settings = ({
                   <span className="text-[10px] opacity-50 uppercase tracking-wider">System Default</span>
                   <div 
                     onClick={() => setWallpaper(wallpapers[0].url)}
-                    className={`relative w-40 aspect-video rounded-lg border-2 cursor-pointer overflow-hidden transition-all ${wallpaper === wallpapers[0].url ? 'border-blue-500 scale-95' : 'border-white/10 hover:border-white/30'}`}
+                    className={`relative w-40 aspect-video rounded-lg border-2 cursor-pointer overflow-hidden transition-all bg-blue-900/20 ${wallpaper === wallpapers[0].url ? 'border-blue-500 scale-95' : 'border-white/10 hover:border-white/30'}`}
                   >
-                    <img src={wallpapers[0].url} alt="Default" className="w-full h-full object-cover brightness-50" referrerPolicy="no-referrer" />
-                    <div className="absolute inset-0 flex items-center justify-center">
+                    <img 
+                      src={wallpapers[0].url} 
+                      alt="Default" 
+                      className="w-full h-full object-cover brightness-50" 
+                      referrerPolicy="no-referrer"
+                      onError={(e) => (e.currentTarget.style.display = 'none')} 
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-600/20 to-purple-600/20">
                       <span className="text-white font-bold text-sm tracking-widest uppercase drop-shadow-lg">Default</span>
                     </div>
                   </div>
@@ -830,9 +836,18 @@ const Settings = ({
                       <div 
                         key={wp.id}
                         onClick={() => setWallpaper(wp.full || wp.url)}
-                        className={`aspect-video rounded border-2 cursor-pointer overflow-hidden transition-all ${wallpaper === (wp.full || wp.url) ? 'border-blue-500 scale-95' : 'border-transparent hover:border-white/20'}`}
+                        className={`aspect-video rounded border-2 cursor-pointer overflow-hidden transition-all bg-white/5 flex items-center justify-center ${wallpaper === (wp.full || wp.url) ? 'border-blue-500 scale-95' : 'border-transparent hover:border-white/20'}`}
                       >
-                        <img src={wp.url} alt={wp.id} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        <img 
+                          src={wp.url} 
+                          alt={wp.id} 
+                          className="w-full h-full object-cover" 
+                          referrerPolicy="no-referrer"
+                          onError={(e) => (e.currentTarget.style.opacity = '0')}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+                          <Palette size={16} />
+                        </div>
                       </div>
                     ))}
                   </div>
