@@ -1,0 +1,5 @@
+{
+  "name": "Shadows 11",
+  "description": "A highly polished Shadows 11 desktop experience in the browser, featuring a functional taskbar, start menu, window management, and system apps.",
+  "requestFramePermissions": ["geolocation"]
+}
