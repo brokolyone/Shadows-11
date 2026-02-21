@@ -13,7 +13,7 @@ import { AppID, AppConfig, WindowState, FSItem, Language, Theme, TaskbarAlignmen
 const TRANSLATIONS = {
   en: {
     explorer: 'File Explorer',
-    edge: 'Microsoft Edge',
+    edge: 'Shadows Browser',
     notepad: 'Notepad',
     calculator: 'Calculator',
     settings: 'Settings',
@@ -63,7 +63,7 @@ const TRANSLATIONS = {
   },
   ru: {
     explorer: 'Проводник',
-    edge: 'Microsoft Edge',
+    edge: 'Shadows Browser',
     notepad: 'Блокнот',
     calculator: 'Калькулятор',
     settings: 'Параметры',
@@ -233,7 +233,7 @@ const FileExplorer = ({ fs, currentPath, onNavigate, onOpenFile, t }: { fs: FSIt
   );
 };
 
-const EdgeBrowser = () => {
+const EdgeBrowser = ({ onDownload }: { onDownload: (name: string) => void }) => {
   const [url, setUrl] = useState('https://www.google.com/search?igu=1');
   const [input, setInput] = useState('https://www.google.com');
 
@@ -252,8 +252,17 @@ const EdgeBrowser = () => {
           onKeyDown={(e) => e.key === 'Enter' && setUrl(input.startsWith('http') ? input : `https://${input}`)}
           className="flex-1 bg-black/10 dark:bg-white/10 rounded-full px-4 py-1 text-xs outline-none focus:ring-1 ring-blue-500"
         />
+        <button 
+          onClick={() => {
+            const name = prompt('Enter filename to download (e.g. music.mp3):', 'audio.mp3');
+            if (name) onDownload(name);
+          }}
+          className="p-1 px-2 text-[10px] bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors"
+        >
+          Download
+        </button>
       </div>
-      <iframe src={url} className="flex-1 w-full border-none" title="Edge Browser" />
+      <iframe src={url} className="flex-1 w-full border-none" title="Shadows Browser" />
     </div>
   );
 };
@@ -798,16 +807,36 @@ const Settings = ({
           <div className="flex flex-col gap-4">
             <div>
               <p className="text-xs mb-2 opacity-70">{t.wallpaper}</p>
-              <div className="grid grid-cols-4 gap-2">
-                {wallpapers.map(wp => (
+              <div className="flex flex-col gap-4">
+                {/* Default Wallpaper Frame */}
+                <div className="flex flex-col gap-2">
+                  <span className="text-[10px] opacity-50 uppercase tracking-wider">System Default</span>
                   <div 
-                    key={wp.id}
-                    onClick={() => setWallpaper(wp.full || wp.url)}
-                    className={`aspect-video rounded border-2 cursor-pointer overflow-hidden transition-all ${wallpaper === (wp.full || wp.url) ? 'border-blue-500 scale-95' : 'border-transparent hover:border-white/20'}`}
+                    onClick={() => setWallpaper(wallpapers[0].url)}
+                    className={`relative w-40 aspect-video rounded-lg border-2 cursor-pointer overflow-hidden transition-all ${wallpaper === wallpapers[0].url ? 'border-blue-500 scale-95' : 'border-white/10 hover:border-white/30'}`}
                   >
-                    <img src={wp.url} alt={wp.id} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    <img src={wallpapers[0].url} alt="Default" className="w-full h-full object-cover brightness-50" referrerPolicy="no-referrer" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-white font-bold text-sm tracking-widest uppercase drop-shadow-lg">Default</span>
+                    </div>
                   </div>
-                ))}
+                </div>
+
+                {/* Other Wallpapers Grid */}
+                <div className="flex flex-col gap-2">
+                  <span className="text-[10px] opacity-50 uppercase tracking-wider">Landscape Collection</span>
+                  <div className="grid grid-cols-4 gap-2">
+                    {wallpapers.slice(1).map(wp => (
+                      <div 
+                        key={wp.id}
+                        onClick={() => setWallpaper(wp.full || wp.url)}
+                        className={`aspect-video rounded border-2 cursor-pointer overflow-hidden transition-all ${wallpaper === (wp.full || wp.url) ? 'border-blue-500 scale-95' : 'border-transparent hover:border-white/20'}`}
+                      >
+                        <img src={wp.url} alt={wp.id} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
             
@@ -852,7 +881,7 @@ const Settings = ({
 
 const APPS: AppConfig[] = [
   { id: 'explorer', name: 'File Explorer', icon: Folder, color: '#facc15', component: FileExplorer },
-  { id: 'edge', name: 'Microsoft Edge', icon: Globe, color: '#3b82f6', component: EdgeBrowser },
+  { id: 'edge', name: 'Shadows Browser', icon: Globe, color: '#3b82f6', component: EdgeBrowser },
   { id: 'notepad', name: 'Notepad', icon: FileText, color: '#94a3b8', component: Notepad },
   { id: 'calculator', name: 'Calculator', icon: CalcIcon, color: '#3b82f6', component: Calculator },
   { id: 'paint', name: 'Paint', icon: Palette, color: '#ef4444', component: Paint },
@@ -875,7 +904,7 @@ interface WindowProps {
   onUpdatePos: (id: string, x: number, y: number) => void;
 }
 
-const AppWindow = ({ win, activeWindowId, onClose, onMaximize, onMinimize, onFocus, onUpdatePos, fs, onUpdateFS, onOpenAppWithFile, language, setLanguage, theme, setTheme, wallpaper, setWallpaper, taskbarAlignment, setTaskbarAlignment, transparency, setTransparency, t, windows }: WindowProps & { fs: FSItem, onUpdateFS: (newFS: FSItem) => void, onOpenAppWithFile: (appId: AppID, file: FSItem) => void, language: Language, setLanguage: (l: Language) => void, theme: Theme, setTheme: (t: Theme) => void, wallpaper: string, setWallpaper: (w: string) => void, taskbarAlignment: TaskbarAlignment, setTaskbarAlignment: (a: TaskbarAlignment) => void, transparency: boolean, setTransparency: (v: boolean) => void, t: any, windows: WindowState[] }) => {
+const AppWindow = ({ win, activeWindowId, onClose, onMaximize, onMinimize, onFocus, onUpdatePos, fs, onUpdateFS, onOpenAppWithFile, language, setLanguage, theme, setTheme, wallpaper, setWallpaper, taskbarAlignment, setTaskbarAlignment, transparency, setTransparency, t, windows, onDownload }: WindowProps & { fs: FSItem, onUpdateFS: (newFS: FSItem) => void, onOpenAppWithFile: (appId: AppID, file: FSItem) => void, language: Language, setLanguage: (l: Language) => void, theme: Theme, setTheme: (t: Theme) => void, wallpaper: string, setWallpaper: (w: string) => void, taskbarAlignment: TaskbarAlignment, setTaskbarAlignment: (a: TaskbarAlignment) => void, transparency: boolean, setTransparency: (v: boolean) => void, t: any, windows: WindowState[], onDownload: (name: string) => void }) => {
   const app = APPS.find(a => a.id === win.appId)!;
   const dragControls = useDragControls();
   const [currentPath, setCurrentPath] = useState('/');
@@ -903,6 +932,8 @@ const AppWindow = ({ win, activeWindowId, onClose, onMaximize, onMinimize, onFoc
         />;
       case 'terminal':
         return <Terminal fs={fs} onUpdateFS={onUpdateFS} t={t} />;
+      case 'edge':
+        return <EdgeBrowser onDownload={onDownload} />;
       case 'taskmanager':
         return <TaskManager windows={windows} onCloseWindow={onClose} t={t} />;
       case 'settings':
@@ -1150,6 +1181,29 @@ export default function App() {
     setWindows(windows.map(w => w.id === id ? { ...w, x, y } : w));
   };
 
+  const handleDownload = (name: string) => {
+    const isAudio = name.toLowerCase().endsWith('.mp3') || name.toLowerCase().endsWith('.wav');
+    if (!isAudio) {
+      alert('Only .mp3 and .wav files are supported for isolated download in this system.');
+      return;
+    }
+
+    const newFS = { ...fs };
+    const downloadsFolder = newFS.children?.find(c => c.name === 'Downloads');
+    if (downloadsFolder) {
+      const newItem: FSItem = {
+        id: Math.random().toString(36).substr(2, 9),
+        name,
+        type: 'file',
+        content: `Simulated audio content for ${name}`
+      };
+      downloadsFolder.children = [...(downloadsFolder.children || []), newItem];
+      setFS(newFS);
+      alert(`${name} has been downloaded to your Downloads folder.`);
+      openApp('explorer');
+    }
+  };
+
   return (
     <div 
       onMouseDown={handleMouseDown}
@@ -1243,6 +1297,7 @@ export default function App() {
             setTransparency={setTransparency}
             t={t}
             windows={windows}
+            onDownload={handleDownload}
           />
         ))}
       </AnimatePresence>
@@ -1366,7 +1421,7 @@ export default function App() {
             <Search size={20} />
           </div>
           <div className="w-[1px] h-6 bg-white/10 mx-1" />
-          {APPS.map(app => {
+          {APPS.filter(app => app.id !== 'taskmanager').map(app => {
             const isOpen = windows.some(w => w.appId === app.id);
             const isActive = activeWindowId && windows.find(w => w.id === activeWindowId)?.appId === app.id;
             return (
